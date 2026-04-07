@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gem list:*)",
+      "Bash(ruby -e ':*)",
+      "Bash(xcodebuild -project InfiniteSurvival.xcodeproj -scheme InfiniteSurvival -destination 'generic/platform=iOS Simulator' -configuration Debug build)",
+      "Bash(xcodebuild -project InfiniteSurvival.xcodeproj -scheme InfiniteSurvival -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build)",
+      "Bash(xcodebuild -project InfiniteSurvival.xcodeproj -scheme InfiniteSurvival -destination 'platform=iOS Simulator,name=iPhone 16' build)"
+    ]
+  }
+}
