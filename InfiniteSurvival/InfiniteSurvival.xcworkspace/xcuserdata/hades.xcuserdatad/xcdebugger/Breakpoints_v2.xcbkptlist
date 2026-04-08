@@ -7,22 +7,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "AB387E66-9565-411D-994B-7596D1D444A2"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "InfiniteSurvival/New Group 2/PhantasmagoricSimulationView.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "340"
-            endingLineNumber = "340"
-            landmarkName = "resolveCosmicCollisions()"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "54268614-94AF-4205-B0DC-7FAD9BFF5F07"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
@@ -52,48 +36,64 @@
             landmarkType = "7">
             <Locations>
                <Location
-                  uuid = "EA2183FE-F33C-4A25-B308-BDCEE49650EE - b46583a2c9322166"
+                  uuid = "EA2183FE-F33C-4A25-B308-BDCEE49650EE - eb5da75915b2ee"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
                   symbolName = "(2) suspend resume partial function for closure #1 () async throws -&gt; () in InfiniteSurvival.PhantasmagoricSimulationView.UdnaioKoale() -&gt; ()"
                   moduleName = "InfiniteSurvival.debug.dylib"
                   usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/hades/Desktop/Code/26/04/0407-1/InfiniteSurvival/InfiniteSurvival/New%20Group%202/PhantasmagoricSimulationView.swift"
+                  urlString = "file:///Users/hades/Desktop/Code/26/04/0407-1/git/InfiniteSurvival/InfiniteSurvival/InfiniteSurvival/New%20Group%202/PhantasmagoricSimulationView.swift"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "389"
                   endingLineNumber = "389">
                </Location>
                <Location
-                  uuid = "EA2183FE-F33C-4A25-B308-BDCEE49650EE - fc50fb3a86952564"
+                  uuid = "EA2183FE-F33C-4A25-B308-BDCEE49650EE - 48de253f16b2b6ec"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
                   symbolName = "(4) suspend resume partial function for closure #1 () async throws -&gt; () in InfiniteSurvival.PhantasmagoricSimulationView.UdnaioKoale() -&gt; ()"
                   moduleName = "InfiniteSurvival.debug.dylib"
                   usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/hades/Desktop/Code/26/04/0407-1/InfiniteSurvival/InfiniteSurvival/New%20Group%202/PhantasmagoricSimulationView.swift"
+                  urlString = "file:///Users/hades/Desktop/Code/26/04/0407-1/git/InfiniteSurvival/InfiniteSurvival/InfiniteSurvival/New%20Group%202/PhantasmagoricSimulationView.swift"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "389"
                   endingLineNumber = "389">
                </Location>
                <Location
-                  uuid = "EA2183FE-F33C-4A25-B308-BDCEE49650EE - 449e5092b44c2962"
+                  uuid = "EA2183FE-F33C-4A25-B308-BDCEE49650EE - f0108e97246bbaea"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
                   symbolName = "(6) suspend resume partial function for closure #1 () async throws -&gt; () in InfiniteSurvival.PhantasmagoricSimulationView.UdnaioKoale() -&gt; ()"
                   moduleName = "InfiniteSurvival.debug.dylib"
                   usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/hades/Desktop/Code/26/04/0407-1/InfiniteSurvival/InfiniteSurvival/New%20Group%202/PhantasmagoricSimulationView.swift"
+                  urlString = "file:///Users/hades/Desktop/Code/26/04/0407-1/git/InfiniteSurvival/InfiniteSurvival/InfiniteSurvival/New%20Group%202/PhantasmagoricSimulationView.swift"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
                   startingLineNumber = "389"
                   endingLineNumber = "389">
                </Location>
             </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "71919DC2-AF7B-475B-8B1D-E08F763E33C3"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "InfiniteSurvival/New Group 2/PhantasmagoricSimulationView.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "340"
+            endingLineNumber = "340"
+            landmarkName = "resolveCosmicCollisions()"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

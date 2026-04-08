@@ -15,6 +15,8 @@ enum IncidentCategory: String, CaseIterable {
     case wanderingHealer  // Traveling healer
     case ambushTrap       // Trap encounter
     case mysticShrine     // Mysterious shrine
+    case merchant         // Trade resources
+    case thunderstorm     // Random discard / damage
 
     var displayTitle: String {
         switch self {
@@ -24,6 +26,8 @@ enum IncidentCategory: String, CaseIterable {
         case .wanderingHealer: return "Wandering Healer"
         case .ambushTrap:      return "Ambush Trap!"
         case .mysticShrine:    return "Mystic Shrine"
+        case .merchant:      return "Traveling Merchant"
+        case .thunderstorm:  return "Thunderstorm"
         }
     }
 
@@ -41,6 +45,10 @@ enum IncidentCategory: String, CaseIterable {
             return "You triggered a trap! Play a Triplet or take damage!"
         case .mysticShrine:
             return "An ancient shrine pulses with power. Offer tiles for a blessing!"
+        case .merchant:
+            return "A traveling merchant offers trades. Play a Pair for a better deal!"
+        case .thunderstorm:
+            return "A thunderstorm rages! Play a Sequence to brace, or lose a random tile and HP."
         }
     }
 
@@ -52,6 +60,8 @@ enum IncidentCategory: String, CaseIterable {
         case .wanderingHealer: return "heart.fill"
         case .ambushTrap:      return "exclamationmark.triangle.fill"
         case .mysticShrine:    return "sparkles"
+        case .merchant:        return "bag"
+        case .thunderstorm:    return "cloud.bolt.rain.fill"
         }
     }
 
@@ -63,6 +73,8 @@ enum IncidentCategory: String, CaseIterable {
         case .wanderingHealer: return "#E91E63"
         case .ambushTrap:      return "#FF9800"
         case .mysticShrine:    return "#9C27B0"
+        case .merchant:        return "#795548"
+        case .thunderstorm:    return "#607D8B"
         }
     }
 }
@@ -90,9 +102,14 @@ struct HappeningIncident {
 // MARK: - Event Generator
 struct IncidentForgeFactory {
 
-    static func fabricateRandomIncident(forDay dayIndex: Int) -> HappeningIncident {
+    static func fabricateRandomIncident(forDay dayIndex: Int, modeConfig: GameModeConfig) -> HappeningIncident {
         let scaleFactor = 1.0 + Double(dayIndex) / 20.0
-        let allCategories = IncidentCategory.allCases
+        var allCategories = IncidentCategory.allCases
+        // Daily affixes can bias or filter incidents
+        if modeConfig.dailyAffixes.contains(where: { $0.id == "affix_omens" }) {
+            // Increase odds of hostile weather and beasts
+            allCategories += [.beastAssault, .thunderstorm]
+        }
         let chosenCategory = allCategories[Int.random(in: 0..<allCategories.count)]
 
         switch chosenCategory {
@@ -164,6 +181,30 @@ struct IncidentForgeFactory {
                 staminaBonusOnSuccess: 3,
                 healthBonusOnSuccess: 3,
                 healthPenaltyOnFail: 0,
+                foodPenaltyOnFail: 0,
+                staminaPenaltyOnFail: 0
+            )
+
+        case .merchant:
+            return HappeningIncident(
+                category: .merchant,
+                requiredMeldKind: .pair,
+                foodBonusOnSuccess: 4,
+                staminaBonusOnSuccess: -1, // 以体力换食物
+                healthBonusOnSuccess: 1,
+                healthPenaltyOnFail: 0,
+                foodPenaltyOnFail: 0,
+                staminaPenaltyOnFail: 1
+            )
+
+        case .thunderstorm:
+            return HappeningIncident(
+                category: .thunderstorm,
+                requiredMeldKind: .sequence,
+                foodBonusOnSuccess: 0,
+                staminaBonusOnSuccess: 1,
+                healthBonusOnSuccess: 0,
+                healthPenaltyOnFail: Int(Double(2) * scaleFactor),
                 foodPenaltyOnFail: 0,
                 staminaPenaltyOnFail: 0
             )

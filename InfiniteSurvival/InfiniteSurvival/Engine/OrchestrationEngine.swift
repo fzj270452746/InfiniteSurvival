@@ -43,7 +43,9 @@ class OrchestrationEngine {
     private(set) var tilePondReservoir: [CeramicTileUnit] = []
     private(set) var pendingIncident: HappeningIncident?
 
-    private let eventTriggerInterval: Int = 3
+    private var eventTriggerInterval: Int = 3
+    private var modeConfig: GameModeConfig = .forMode(.normal)
+    private var currentMode: GameMode = .normal
 
     // MARK: - Tile Pool Construction
     private func constructTilePond() -> [CeramicTileUnit] {
@@ -70,12 +72,16 @@ class OrchestrationEngine {
     }
 
     // MARK: - Game Start
-    func commenceNewSession() {
+    func commenceNewSession(mode: GameMode = .normal) {
+        currentMode = mode
+        modeConfig = GameModeConfig.forMode(mode)
         vitalityLedger.resetToGenesis()
+        vitalityLedger.applyConfig(modeConfig)
         tilePondReservoir = constructTilePond()
         handPalette.removeAll()
         pendingIncident = nil
         currentPhase = .drawingTile
+        eventTriggerInterval = modeConfig.eventIntervalDays
 
         // Deal initial hand
         var initialHand: [CeramicTileUnit] = []
@@ -327,7 +333,7 @@ class OrchestrationEngine {
         vitalityLedger.replenishFood(outcome.foodYield)
         vitalityLedger.replenishStamina(outcome.staminaYield)
         vitalityLedger.replenishHealth(outcome.healthYield)
-        vitalityLedger.augmentScore(outcome.patternKind.rewardCoefficient * 10)
+        vitalityLedger.augmentScore(outcome.patternKind.rewardCoefficient * 10 * modeConfig.scoreMultiplier)
     }
 
     // MARK: - Discard
@@ -361,7 +367,7 @@ class OrchestrationEngine {
 
         // Check for event
         if vitalityLedger.elapsedDayCount % eventTriggerInterval == 0 && vitalityLedger.elapsedDayCount > 0 {
-            let incident = IncidentForgeFactory.fabricateRandomIncident(forDay: vitalityLedger.elapsedDayCount)
+            let incident = IncidentForgeFactory.fabricateRandomIncident(forDay: vitalityLedger.elapsedDayCount, modeConfig: modeConfig)
             pendingIncident = incident
             currentPhase = .eventEncounter
             delegate?.engineDidTriggerIncident(self, incident: incident)
@@ -393,10 +399,17 @@ class OrchestrationEngine {
             for idx in validIndices.sorted().reversed() {
                 handPalette.remove(at: idx)
             }
-            vitalityLedger.replenishFood(incident.foodBonusOnSuccess)
+            var foodBonus = incident.foodBonusOnSuccess
+            // Daily affix: 顺子加餐（对顺子和事件按需加餐）
+            if let required = incident.requiredMeldKind,
+               required == .sequence,
+               modeConfig.dailyAffixes.contains(where: { $0.id == "affix_chain_meal" }) {
+                foodBonus += 1
+            }
+            vitalityLedger.replenishFood(foodBonus)
             vitalityLedger.replenishStamina(incident.staminaBonusOnSuccess)
             vitalityLedger.replenishHealth(incident.healthBonusOnSuccess)
-            vitalityLedger.augmentScore(20)
+            vitalityLedger.augmentScore(20 * modeConfig.scoreMultiplier)
             emitAchievements(AchievementVault.shared.recordEventWin(category: incident.category))
         } else {
             vitalityLedger.inflictDamage(incident.healthPenaltyOnFail)
@@ -405,6 +418,11 @@ class OrchestrationEngine {
             }
             if incident.staminaPenaltyOnFail > 0 {
                 vitalityLedger.replenishStamina(-incident.staminaPenaltyOnFail)
+            }
+
+            // Thunderstorm failure: random discard 1
+            if incident.category == .thunderstorm, !handPalette.isEmpty {
+                _ = handPalette.remove(at: Int.random(in: 0..<handPalette.count))
             }
         }
 

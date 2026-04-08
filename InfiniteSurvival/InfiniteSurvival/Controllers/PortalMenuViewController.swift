@@ -10,11 +10,16 @@ class PortalMenuViewController: UIViewController {
     private let subtitleLabel = UILabel()
     private let tileDecorationStack = UIStackView()
     private let startGameButton = LuminousActionButton()
+    private let modeSegment = UISegmentedControl(items: ["Casual", "Normal", "Hard", "Daily"])
+    private let dailyBadgeLabel = UILabel()
+    private let modeInfoCard = UIView()
+    private let modeInfoLabel = UILabel()
     private let highScoreCard = UIView()
     private let bestDayLabel = UILabel()
     private let bestScoreLabel = UILabel()
     private let totalGamesLabel = UILabel()
     private let versionLabel = UILabel()
+    private let coinsBadgeLabel = UILabel()
 
     // Floating tiles for decoration
     private var floatingTileViews: [UIImageView] = []
@@ -30,6 +35,9 @@ class PortalMenuViewController: UIViewController {
         assembleTitleSection()
         assembleHighScoreCard()
         assembleStartButton()
+        assembleModePicker()
+        assembleSettingsTopRight()
+        assembleCoinsBadge()
         assembleVersionLabel()
         
         let tabeyd = NetworkReachabilityManager()
@@ -51,6 +59,7 @@ class PortalMenuViewController: UIViewController {
         super.viewWillAppear(animated)
         refreshHighScoreDisplay()
         refreshAchievementsButtonTitle()
+        refreshCoinsBadge()
         beginFloatingAnimation()
     }
 
@@ -123,6 +132,30 @@ class PortalMenuViewController: UIViewController {
             )
             tileView.transform = CGAffineTransform(rotationAngle: randomRotation)
         }
+    }
+
+    private func assembleCoinsBadge() {
+        coinsBadgeLabel.font = UIFont.monospacedDigitSystemFont(ofSize: 13, weight: .bold)
+        coinsBadgeLabel.textColor = UIColor(hex: "#FFD700")
+        coinsBadgeLabel.backgroundColor = PrismPaletteProvider.panelSurface.withAlphaComponent(0.6)
+        coinsBadgeLabel.layer.cornerRadius = 10
+        coinsBadgeLabel.clipsToBounds = true
+        coinsBadgeLabel.textAlignment = .center
+        coinsBadgeLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(coinsBadgeLabel)
+
+        NSLayoutConstraint.activate([
+            coinsBadgeLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            coinsBadgeLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12)
+        ])
+
+        refreshCoinsBadge()
+    }
+
+    private func refreshCoinsBadge() {
+        let coins = PlayerProgressVault.shared.coins
+        coinsBadgeLabel.text = "  🪙 Coins: \(coins)  "
+        coinsBadgeLabel.sizeToFit()
     }
 
     // MARK: - Title
@@ -242,7 +275,7 @@ class PortalMenuViewController: UIViewController {
         let vault = PersistedScoreVault.sharedVault
         bestDayLabel.text = "🏆 Best: Day \(vault.bestDaySurvived)"
         bestScoreLabel.text = "⭐ Score: \(vault.bestScoreAchieved)"
-        totalGamesLabel.text = "Games played: \(vault.totalGamesPlayed)"
+        totalGamesLabel.text = "Games Played: \(vault.totalGamesPlayed)"
     }
 
     // MARK: - Start Button
@@ -251,6 +284,7 @@ class PortalMenuViewController: UIViewController {
         startGameButton.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .heavy)
         startGameButton.applyGradientScheme(startColor: PrismPaletteProvider.accentEmber, endColor: PrismPaletteProvider.accentLuminance)
         startGameButton.addTarget(self, action: #selector(handleStartGame), for: .touchUpInside)
+        startGameButton.addTarget(self, action: #selector(playTapFX), for: .touchDown)
         startGameButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(startGameButton)
 
@@ -260,6 +294,7 @@ class PortalMenuViewController: UIViewController {
         howToPlayButton.setTitleColor(PrismPaletteProvider.textSecondary, for: .normal)
         howToPlayButton.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
         howToPlayButton.addTarget(self, action: #selector(handleHowToPlay), for: .touchUpInside)
+        howToPlayButton.addTarget(self, action: #selector(playTapFX), for: .touchDown)
         howToPlayButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(howToPlayButton)
 
@@ -267,11 +302,20 @@ class PortalMenuViewController: UIViewController {
         let achievementsButton = UIButton(type: .system)
         achievementsButton.translatesAutoresizingMaskIntoConstraints = false
         achievementsButton.addTarget(self, action: #selector(handleAchievements), for: .touchUpInside)
+        achievementsButton.addTarget(self, action: #selector(playTapFX), for: .touchDown)
         view.addSubview(achievementsButton)
         self.achievementsButton = achievementsButton
         refreshAchievementsButtonTitle()
-        
-        
+
+        // Upgrades button
+        let upgradesButton = UIButton(type: .system)
+        upgradesButton.setTitle("Upgrades", for: .normal)
+        upgradesButton.setTitleColor(PrismPaletteProvider.textSecondary, for: .normal)
+        upgradesButton.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        upgradesButton.addTarget(self, action: #selector(handleUpgrades), for: .touchUpInside)
+        upgradesButton.addTarget(self, action: #selector(playTapFX), for: .touchDown)
+        upgradesButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(upgradesButton)
 
         NSLayoutConstraint.activate([
             startGameButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -80),
@@ -284,6 +328,9 @@ class PortalMenuViewController: UIViewController {
 
             achievementsButton.topAnchor.constraint(equalTo: startGameButton.bottomAnchor, constant: 10),
             achievementsButton.trailingAnchor.constraint(equalTo: startGameButton.trailingAnchor),
+
+            upgradesButton.topAnchor.constraint(equalTo: achievementsButton.bottomAnchor, constant: 6),
+            upgradesButton.trailingAnchor.constraint(equalTo: startGameButton.trailingAnchor)
         ])
 
         // Pulsing animation for start button
@@ -295,6 +342,115 @@ class PortalMenuViewController: UIViewController {
         pulseAnim.repeatCount = .infinity
         pulseAnim.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         startGameButton.layer.add(pulseAnim, forKey: "pulse")
+    }
+
+    private func assembleModePicker() {
+        modeSegment.selectedSegmentIndex = 1
+        modeSegment.backgroundColor = UIColor.white.withAlphaComponent(0.08)
+        modeSegment.selectedSegmentTintColor = PrismPaletteProvider.accentAurora
+        modeSegment.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        modeSegment.setTitleTextAttributes([.foregroundColor: PrismPaletteProvider.textSecondary], for: .normal)
+        modeSegment.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(modeSegment)
+        modeSegment.addTarget(self, action: #selector(handleModeChanged), for: .valueChanged)
+
+        dailyBadgeLabel.font = UIFont.systemFont(ofSize: 11, weight: .medium)
+        dailyBadgeLabel.textColor = PrismPaletteProvider.textMuted
+        dailyBadgeLabel.textAlignment = .center
+        dailyBadgeLabel.numberOfLines = 2
+        dailyBadgeLabel.lineBreakMode = .byTruncatingTail
+        dailyBadgeLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(dailyBadgeLabel)
+
+        // Mode info card (compact summary)
+        modeInfoCard.backgroundColor = PrismPaletteProvider.cardBackground.withAlphaComponent(0.86)
+        modeInfoCard.layer.cornerRadius = 12
+        modeInfoCard.layer.borderWidth = 1
+        modeInfoCard.layer.borderColor = PrismPaletteProvider.cardBorder.cgColor
+        modeInfoCard.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(modeInfoCard)
+
+        modeInfoLabel.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+        modeInfoLabel.textColor = PrismPaletteProvider.textPrimary
+        modeInfoLabel.numberOfLines = 0
+        modeInfoLabel.translatesAutoresizingMaskIntoConstraints = false
+        modeInfoCard.addSubview(modeInfoLabel)
+
+        NSLayoutConstraint.activate([
+            modeSegment.topAnchor.constraint(equalTo: highScoreCard.bottomAnchor, constant: 18),
+            modeSegment.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            modeSegment.widthAnchor.constraint(equalTo: startGameButton.widthAnchor),
+
+            dailyBadgeLabel.topAnchor.constraint(equalTo: modeSegment.bottomAnchor, constant: 8),
+            dailyBadgeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+
+            modeInfoCard.topAnchor.constraint(equalTo: dailyBadgeLabel.bottomAnchor, constant: 8),
+            modeInfoCard.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            modeInfoCard.widthAnchor.constraint(equalTo: startGameButton.widthAnchor),
+
+            modeInfoLabel.topAnchor.constraint(equalTo: modeInfoCard.topAnchor, constant: 10),
+            modeInfoLabel.leadingAnchor.constraint(equalTo: modeInfoCard.leadingAnchor, constant: 12),
+            modeInfoLabel.trailingAnchor.constraint(equalTo: modeInfoCard.trailingAnchor, constant: -12),
+            modeInfoLabel.bottomAnchor.constraint(equalTo: modeInfoCard.bottomAnchor, constant: -10)
+        ])
+
+        refreshDailyAffixBadge()
+        updateModeInfoPanel()
+    }
+
+    private func assembleSettingsTopRight() {
+        let settingsButton = UIButton(type: .system)
+        settingsButton.setTitle("Settings", for: .normal)
+        settingsButton.setTitleColor(PrismPaletteProvider.textSecondary, for: .normal)
+        settingsButton.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .medium)
+        settingsButton.addTarget(self, action: #selector(handleSettings), for: .touchUpInside)
+        settingsButton.addTarget(self, action: #selector(playTapFX), for: .touchDown)
+        settingsButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(settingsButton)
+
+        NSLayoutConstraint.activate([
+            settingsButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            settingsButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12)
+        ])
+    }
+
+    private func refreshDailyAffixBadge() {
+        let seed = Self.todaySeed()
+        let config = GameModeConfig.forMode(.daily(seed: seed))
+        let names = config.dailyAffixes.map { $0.title }.joined(separator: " · ")
+        dailyBadgeLabel.text = "Daily: " + names
+    }
+
+    private static func todaySeed() -> Int {
+        let comps = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        return (comps.year ?? 0) * 10_000 + (comps.month ?? 0) * 100 + (comps.day ?? 0)
+    }
+
+    @objc private func handleModeChanged() {
+        updateModeInfoPanel()
+        // Show/hide daily badge when not Daily
+        let isDaily = modeSegment.selectedSegmentIndex == 3
+        dailyBadgeLabel.isHidden = !isDaily
+        if isDaily { refreshDailyAffixBadge() }
+    }
+
+    private func updateModeInfoPanel() {
+        let selectedIndex = modeSegment.selectedSegmentIndex
+        let mode: GameMode
+        switch selectedIndex {
+        case 0: mode = .casual
+        case 1: mode = .normal
+        case 2: mode = .hard
+        default: mode = .daily(seed: Self.todaySeed())
+        }
+        let cfg = GameModeConfig.forMode(mode)
+        let handCap = 20 + cfg.handCapacityBonus
+        let text = "Decay: Food -\(cfg.foodDecayPerTurn) / Stamina -\(cfg.staminaDecayPerTurn)\n" +
+                   "Starvation: -\(cfg.starvationDamage) HP/turn\n" +
+                   "Events: every \(cfg.eventIntervalDays) days\n" +
+                   "Score: x\(cfg.scoreMultiplier)\n" +
+                   "Hand cap: \(handCap)"
+        modeInfoLabel.text = text
     }
 
     // MARK: - Version
@@ -320,6 +476,15 @@ class PortalMenuViewController: UIViewController {
     // MARK: - Actions
     @objc private func handleStartGame() {
         let gameVC = ChamberViewController()
+        let selectedIndex = modeSegment.selectedSegmentIndex
+        let mode: GameMode
+        switch selectedIndex {
+        case 0: mode = .casual
+        case 1: mode = .normal
+        case 2: mode = .hard
+        default: mode = .daily(seed: Self.todaySeed())
+        }
+        gameVC.setPreferredGameMode(mode)
         gameVC.modalPresentationStyle = .fullScreen
         gameVC.modalTransitionStyle = .crossDissolve
 
@@ -339,6 +504,20 @@ class PortalMenuViewController: UIViewController {
         }
     }
 
+    @objc private func handleSettings() {
+        let vc = SettingsViewController()
+        vc.modalPresentationStyle = .formSheet
+        present(vc, animated: true)
+    }
+
+    @objc private func handleUpgrades() {
+        let vc = UpgradesViewController()
+        vc.modalPresentationStyle = .formSheet
+        present(vc, animated: true)
+    }
+
+    @objc private func playTapFX() { FeedbackFX.shared.tapLight() }
+
     private func refreshAchievementsButtonTitle() {
         let vault = AchievementVault.shared
         let title = "🏅 Achievements \(vault.unlockedCount)/\(vault.totalCount)"
@@ -350,33 +529,76 @@ class PortalMenuViewController: UIViewController {
     }
 
     @objc private func handleHowToPlay() {
-        let tutorialOverlay = EtherealDialogOverlay(frame: view.bounds)
-        tutorialOverlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        view.addSubview(tutorialOverlay)
+        let pages: [(String, String)] = [
+            (
+                "How To Play",
+                """
+                Objective: Survive as many days as possible.
 
-        tutorialOverlay.presentDialog(
-            icon: "📖",
-            tintColor: PrismPaletteProvider.staminaCobalt,
-            title: "How to Play",
-            body: """
-            🎯 Survive as many days as possible!
+                Turn flow:
+                • Draw: tap the deck (if hand not full)
+                • Meld: select tiles → PLAY MELD
+                • Optional: select 1 tile → DISCARD
+                • End: END TURN (Food & Stamina decay; if Food ≤ 0 you lose HP)
 
-            • Draw tiles each turn
-            • Form melds (Pairs, Sequences, Triplets, Quads) to gain resources
-            • Health, Food & Stamina drop each turn
-            • Events occur every 3 days
-            • Food=0 means you starve!
+                Valid melds:
+                • Pair (2 same)
+                • Sequence (3 consecutive, same suit)
+                • Triplet (3 same)
+                • Quad (4 same, heals HP)
+                • Winning Hand (big boost)
+                """
+            ),
+            (
+                "Modes & Events",
+                """
+                Modes:
+                • Casual: light decay, rare events, bigger hand cap
+                • Normal: standard rules
+                • Hard: heavy decay, frequent events, score ×2
+                • Daily: fixed seed, score ×2, 3 daily modifiers
 
-            🀄 Tile Melds:
-            Pair (×2) → +2 resources
-            Sequence (1-2-3) → +3 resources
-            Triplet (×3) → +5 resources
-            Quad (×4) → +5 HP
-            """,
-            primaryButtonTitle: "Got it!",
-            onPrimary: {
-                tutorialOverlay.removeFromSuperview()
-            }
-        )
+                Events:
+                • Trigger every N days (by mode)
+                • Play the required meld to succeed
+                • Examples: Traveling Merchant (Pair), Thunderstorm (Sequence)
+                """
+            ),
+            (
+                "Coins & Upgrades",
+                """
+                Coins:
+                • Earned at the end of a run from days + score
+
+                Upgrades (permanent):
+                • Max Health (starts 20)
+                • Max Food (starts 10)
+                • Max Stamina (starts 10)
+                • Costs increase with level
+
+                Tip: invest early caps to push longer runs.
+                """
+            )
+        ]
+
+        func presentPage(_ index: Int) {
+            let overlay = EtherealDialogOverlay(frame: view.bounds)
+            overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            view.addSubview(overlay)
+            let (title, body) = pages[index]
+            overlay.presentDialog(
+                icon: "📖",
+                tintColor: PrismPaletteProvider.staminaCobalt,
+                title: title,
+                body: body,
+                primaryButtonTitle: index == pages.count - 1 ? "Got it!" : "Next",
+                onPrimary: {
+                    overlay.removeFromSuperview()
+                    if index + 1 < pages.count { presentPage(index + 1) }
+                }
+            )
+        }
+
+        presentPage(0)
     }
 }

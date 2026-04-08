@@ -25,13 +25,14 @@ class VitalityLedger {
     private(set) var accumulatedScore: Int = 0
 
     // MARK: - Constants
-    private let baselineHealth: Int = 20
-    private let baselineFood: Int = 10
-    private let baselineStamina: Int = 10
+    private var baselineHealth: Int = 20
+    private var baselineFood: Int = 10
+    private var baselineStamina: Int = 10
 
-    private let foodDecayPerTurn: Int = 2
-    private let staminaDecayPerTurn: Int = 1
-    private let starvationDamage: Int = 3
+    // Decay numbers are configurable via GameModeConfig
+    private var foodDecayPerTurn: Int = 2
+    private var staminaDecayPerTurn: Int = 1
+    private var starvationDamage: Int = 3
     private let ceilingGrowthInterval: Int = 5
     private let ceilingGrowthAmount: Int = 1
 
@@ -41,12 +42,26 @@ class VitalityLedger {
 
     // MARK: - Init
     init() {
+        // Apply persistent upgrades on construction
+        let prog = PlayerProgressVault.shared
+        baselineHealth += prog.healthBonus
+        baselineFood += prog.foodBonus
+        baselineStamina += prog.staminaBonus
+
         self.healthCeiling = baselineHealth
         self.foodCeiling = baselineFood
         self.staminaCeiling = baselineStamina
         self.currentHealth = baselineHealth
         self.currentFood = baselineFood
         self.currentStamina = baselineStamina
+    }
+
+    // Apply rules coming from selected game mode
+    func applyConfig(_ config: GameModeConfig) {
+        foodDecayPerTurn = config.foodDecayPerTurn
+        staminaDecayPerTurn = config.staminaDecayPerTurn
+        starvationDamage = config.starvationDamage
+        handCapacityCeiling = 20 + config.handCapacityBonus
     }
 
     // MARK: - Turn Consumption
@@ -127,6 +142,12 @@ class VitalityLedger {
 
     // MARK: - Reset
     func resetToGenesis() {
+        let prog = PlayerProgressVault.shared
+        // Re-evaluate baselines from saved upgrades
+        baselineHealth = 20 + prog.healthBonus
+        baselineFood = 10 + prog.foodBonus
+        baselineStamina = 10 + prog.staminaBonus
+
         healthCeiling = baselineHealth
         foodCeiling = baselineFood
         staminaCeiling = baselineStamina

@@ -12,6 +12,7 @@ class ChamberViewController: UIViewController {
 
     // MARK: - Engine
     private let orchestrationEngine = OrchestrationEngine()
+    private var preferredMode: GameMode = .normal
 
     // MARK: - SpriteKit
     private var arenaScene: MahjongArenaScene!
@@ -52,7 +53,7 @@ class ChamberViewController: UIViewController {
         assembleActionToolbar()
         assembleOverlays()
         configureEngine()
-        orchestrationEngine.commenceNewSession()
+        orchestrationEngine.commenceNewSession(mode: preferredMode)
     }
 
     override var prefersStatusBarHidden: Bool { return true }
@@ -205,17 +206,20 @@ class ChamberViewController: UIViewController {
         meldSubmitButton.titleLabel?.font = UIFont.systemFont(ofSize: 13, weight: .bold)
         meldSubmitButton.applyGradientScheme(startColor: PrismPaletteProvider.accentEmber, endColor: PrismPaletteProvider.accentLuminance)
         meldSubmitButton.addTarget(self, action: #selector(handleMeldSubmission), for: .touchUpInside)
+        meldSubmitButton.addTarget(self, action: #selector(tapFeedback), for: .touchDown)
         meldSubmitButton.isEnabled = false
 
         endTurnButton.setTitle("END TURN", for: .normal)
         endTurnButton.titleLabel?.font = UIFont.systemFont(ofSize: 13, weight: .bold)
         endTurnButton.applyGradientScheme(startColor: PrismPaletteProvider.buttonSecondary, endColor: PrismPaletteProvider.accentAurora)
         endTurnButton.addTarget(self, action: #selector(handleEndTurn), for: .touchUpInside)
+        endTurnButton.addTarget(self, action: #selector(tapFeedback), for: .touchDown)
 
         discardButton.setTitle("DISCARD", for: .normal)
         discardButton.titleLabel?.font = UIFont.systemFont(ofSize: 13, weight: .bold)
         discardButton.applyGradientScheme(startColor: UIColor(hex: "#555577"), endColor: UIColor(hex: "#333355"))
         discardButton.addTarget(self, action: #selector(handleDiscardTile), for: .touchUpInside)
+        discardButton.addTarget(self, action: #selector(tapFeedback), for: .touchDown)
         discardButton.isEnabled = false
 
         let buttonStack = UIStackView(arrangedSubviews: [discardButton, meldSubmitButton, endTurnButton])
@@ -238,6 +242,8 @@ class ChamberViewController: UIViewController {
         ])
     }
 
+    @objc private func tapFeedback() { FeedbackFX.shared.tapLight() }
+
     // MARK: - Overlays
     private func assembleOverlays() {
         dialogOverlay.frame = view.bounds
@@ -258,6 +264,19 @@ class ChamberViewController: UIViewController {
     // MARK: - Engine Config
     private func configureEngine() {
         orchestrationEngine.delegate = self
+        // First-run tutorial: present gentle guidance for first game only
+        if UserDefaults.standard.bool(forKey: "is_tutorial_done") == false {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                self?.dialogOverlay.presentDialog(
+                    icon: "🧭",
+                    tintColor: PrismPaletteProvider.accentAurora,
+            title: "Welcome Tutorial",
+            body: "Tap deck to draw → select two tiles for a Pair → tap PLAY MELD.",
+            primaryButtonTitle: "Start",
+            onPrimary: { UserDefaults.standard.set(true, forKey: "is_tutorial_done") }
+        )
+            }
+        }
     }
 
     // MARK: - Display Refresh
@@ -312,6 +331,7 @@ class ChamberViewController: UIViewController {
                     colors: [UIColor(hex: "#FF4444").cgColor, UIColor(hex: "#CC0000").cgColor]
                 )
                 arenaScene?.clearAllSelections()
+                FeedbackFX.shared.tapError()
             }
         }
 
@@ -324,6 +344,7 @@ class ChamberViewController: UIViewController {
         currentSelectedIndices.removeAll()
         arenaScene?.clearAllSelections()
         refreshButtonStates()
+        FeedbackFX.shared.tapLight()
     }
 
     @objc private func handleDiscardTile() {
@@ -333,11 +354,13 @@ class ChamberViewController: UIViewController {
         currentSelectedIndices.removeAll()
         refreshHandDisplay()
         refreshButtonStates()
+        FeedbackFX.shared.play("discard")
     }
 
     // MARK: - Game Over
     private func presentDefeatScreen(finalDay: Int, finalScore: Int) {
         PersistedScoreVault.sharedVault.submitSessionResult(daySurvived: finalDay, score: finalScore)
+        let coins = PlayerProgressVault.shared.awardCoins(forDay: finalDay, score: finalScore)
 
         let bestDay = PersistedScoreVault.sharedVault.bestDaySurvived
         let isNewRecord = finalDay >= bestDay
@@ -346,16 +369,18 @@ class ChamberViewController: UIViewController {
             icon: isNewRecord ? "🏆" : "💀",
             tintColor: isNewRecord ? UIColor(hex: "#FFD700") : PrismPaletteProvider.accentEmber,
             title: isNewRecord ? "New Record!" : "Defeated",
-            body: "Survived \(finalDay) days\nScore: \(finalScore)\nBest: \(bestDay) days",
+            body: "Survived \(finalDay) days\nScore: \(finalScore)\nBest: \(bestDay) days\n\nCoins +\(coins)",
             primaryButtonTitle: "Try Again",
             secondaryButtonTitle: "Main Menu",
             onPrimary: { [weak self] in
-                self?.orchestrationEngine.commenceNewSession()
+                guard let self = self else { return }
+                self.orchestrationEngine.commenceNewSession(mode: self.preferredMode)
             },
             onSecondary: { [weak self] in
                 self?.navigateToMainMenu()
             }
         )
+        FeedbackFX.shared.play("defeat")
     }
 
     private func navigateToMainMenu() {
@@ -406,6 +431,8 @@ extension ChamberViewController: OrchestrationEngineDelegate {
             subtitle: "Select tiles to form melds",
             duration: 1.5
         )
+        FeedbackFX.shared.play("draw")
+        FeedbackFX.shared.tapLight()
     }
 
     func engineDidEvaluateMeld(_ engine: OrchestrationEngine, outcome: MeldEvaluationOutcome) {
@@ -423,6 +450,8 @@ extension ChamberViewController: OrchestrationEngineDelegate {
             subtitle: rewardText.isEmpty ? outcome.patternKind.displayCaption : rewardText,
             colors: PrismPaletteProvider.emeraldGradientColors
         )
+        FeedbackFX.shared.play("meld")
+        FeedbackFX.shared.tapSuccess()
     }
 
     func engineDidTriggerIncident(_ engine: OrchestrationEngine, incident: HappeningIncident) {
@@ -458,6 +487,8 @@ extension ChamberViewController: OrchestrationEngineDelegate {
                 subtitle: "Event resolved successfully",
                 colors: PrismPaletteProvider.emeraldGradientColors
             )
+            FeedbackFX.shared.play("success")
+            FeedbackFX.shared.tapSuccess()
         } else {
             notificationBanner.flashBanner(
                 icon: "💔",
@@ -465,6 +496,8 @@ extension ChamberViewController: OrchestrationEngineDelegate {
                 subtitle: incident.isHostile ? "You took damage!" : "Opportunity missed",
                 colors: [UIColor(hex: "#FF4444").cgColor, UIColor(hex: "#CC0000").cgColor]
             )
+            FeedbackFX.shared.play("fail")
+            FeedbackFX.shared.tapError()
         }
         refreshHandDisplay()
     }
@@ -532,6 +565,13 @@ extension ChamberViewController {
             self.isShowingAchievement = false
             self.displayNextAchievement()
         }
+    }
+}
+
+// MARK: - Public API
+extension ChamberViewController {
+    func setPreferredGameMode(_ mode: GameMode) {
+        preferredMode = mode
     }
 }
 

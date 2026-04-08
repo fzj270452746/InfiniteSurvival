@@ -196,6 +196,9 @@ class MahjongArenaScene: SKScene {
             handContainer.addChild(sprite)
             tileSprites.append(sprite)
         }
+
+        // Ensure the draw pile (pond) stays above the top of the hand with a safety gap
+        adjustPondPosition(forTotalRows: totalRows, tileSize: tileSize, spacing: spacing)
     }
 
     // MARK: - Touch Handling
@@ -322,5 +325,26 @@ class MahjongArenaScene: SKScene {
             SKAction.fadeOut(withDuration: 0.3),
             SKAction.removeFromParent()
         ]))
+    }
+}
+
+// MARK: - Layout Helpers
+private extension MahjongArenaScene {
+    func adjustPondPosition(forTotalRows rows: Int, tileSize: CGSize, spacing: CGFloat) {
+        // Compute vertical extent of current hand
+        let handHeight = CGFloat(rows) * tileSize.height + CGFloat(max(0, rows - 1)) * (spacing + 4)
+        let handTopY = handAreaY + handHeight
+
+        // Desired minimal distance between hand top and deck center
+        let gap: CGFloat = 80
+        let requiredDeckY = handTopY + gap
+
+        // Baseline and cap to avoid colliding with HUD/top area
+        let baseline = size.height * 0.48
+        let topCap = size.height * 0.78
+
+        let newY = min(max(baseline, requiredDeckY), topCap)
+        pondContainer.position.y = newY
+        pondAreaY = newY
     }
 }
