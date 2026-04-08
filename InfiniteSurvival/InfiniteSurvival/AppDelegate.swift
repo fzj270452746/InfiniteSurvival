@@ -1,5 +1,6 @@
 
 import UIKit
+import AppTrackingTransparency
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -19,5 +20,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // MARK: - Orientation Lock (for pre-iOS 16 compatibility)
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
         return .portrait
+    }
+    
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            ATTrackingManager.requestTrackingAuthorization {_ in }
+        }
     }
 }
