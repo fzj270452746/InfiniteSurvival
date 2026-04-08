@@ -160,14 +160,6 @@ class PortalMenuViewController: UIViewController {
 
     // MARK: - Title
     private func assembleTitleSection() {
-        // Main icon
-        let iconLabel = UILabel()
-        iconLabel.text = "🀄"
-        iconLabel.font = UIFont.systemFont(ofSize: 56)
-        iconLabel.textAlignment = .center
-        iconLabel.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(iconLabel)
-
         // Title
         titleLabel.text = "Infinite Survival"
         titleLabel.font = UIFont.systemFont(ofSize: 32, weight: .heavy)
@@ -196,18 +188,15 @@ class PortalMenuViewController: UIViewController {
         view.addSubview(decorLine)
 
         NSLayoutConstraint.activate([
-            iconLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 50),
-            iconLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-
-            titleLabel.topAnchor.constraint(equalTo: iconLabel.bottomAnchor, constant: 12),
+            titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 30),
             titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 
-            decorLine.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10),
+            decorLine.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
             decorLine.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             decorLine.widthAnchor.constraint(equalToConstant: 120),
             decorLine.heightAnchor.constraint(equalToConstant: 2),
 
-            subtitleLabel.topAnchor.constraint(equalTo: decorLine.bottomAnchor, constant: 10),
+            subtitleLabel.topAnchor.constraint(equalTo: decorLine.bottomAnchor, constant: 8),
             subtitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
             subtitleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
         ])
@@ -253,7 +242,7 @@ class PortalMenuViewController: UIViewController {
 
         NSLayoutConstraint.activate([
             highScoreCard.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            highScoreCard.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 20),
+            highScoreCard.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: 20),
             highScoreCard.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.78),
             highScoreCard.heightAnchor.constraint(equalToConstant: 90),
 
